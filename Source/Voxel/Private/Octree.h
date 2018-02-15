@@ -2,7 +2,6 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "VoxelBox.h"
 
 FORCEINLINE uint64 IntPow9(int Power)
 {
@@ -51,8 +50,6 @@ public:
 
 	FORCEINLINE FIntVector GetMinimalCornerPosition() const;
 	FORCEINLINE FIntVector GetMaximalCornerPosition() const;
-
-	FORCEINLINE FVoxelBox GetBounds() const;
 
 	/**
 	 * Is Leaf?

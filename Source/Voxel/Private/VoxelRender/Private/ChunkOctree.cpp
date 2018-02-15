@@ -16,8 +16,6 @@ FChunkOctree::FChunkOctree(FVoxelRender* Render, FIntVector Position, uint8 Dept
 
 void FChunkOctree::Delete()
 {
-	Render->RemoveChunkFromQueue(this);
-
 	if (bHasChunk)
 	{
 		Unload();

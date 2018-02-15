@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "VoxelProceduralMeshComponent.h"
-#include "Direction.h"
+#include "TransitionDirection.h"
 
 #define CHUNKSIZE_FC 18
 

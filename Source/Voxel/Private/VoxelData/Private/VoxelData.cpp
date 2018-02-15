@@ -5,16 +5,17 @@
 #include "VoxelSave.h"
 #include "VoxelWorldGenerator.h"
 
-FVoxelData::FVoxelData(int Depth, UVoxelWorldGenerator* WorldGenerator)
+FVoxelData::FVoxelData(int Depth, UVoxelWorldGenerator* WorldGenerator, bool bMultiplayer)
 	: Depth(Depth)
 	, WorldGenerator(WorldGenerator)
+	, bMultiplayer(bMultiplayer)
 {
-	MainOctree = new FValueOctree(WorldGenerator, FIntVector::ZeroValue, Depth, FOctree::GetTopIdFromDepth(Depth));
+	MainOctree = new FValueOctree(WorldGenerator, FIntVector::ZeroValue, Depth, FOctree::GetTopIdFromDepth(Depth), bMultiplayer);
 
 	GetCount.Reset();
 
 	CanGetEvent = FGenericPlatformProcess::GetSynchEventFromPool(true);
-	CanSetEvent = FGenericPlatformProcess::GetSynchEventFromPool(false);
+	CanSetEvent = FGenericPlatformProcess::GetSynchEventFromPool(true);
 
 	CanGetEvent->Trigger();
 	CanSetEvent->Trigger();
@@ -32,27 +33,15 @@ int FVoxelData::Size() const
 
 void FVoxelData::BeginSet()
 {
-	WaitingSetCount.Increment();
 	CanGetEvent->Reset();
-	CanSetEvent->Wait(); // Auto reset
-	CanGetEvent->Reset(); // Make sure
-
-	WaitingSetCount.Decrement();
-
-	SetCount.Increment();
-	check(SetCount.GetValue() == 1);
+	CanSetEvent->Wait();
+	CanSetEvent->Reset();
 }
 
 void FVoxelData::EndSet()
 {
-	check(SetCount.GetValue() == 1);
-	SetCount.Decrement();
-
 	CanSetEvent->Trigger();
-	if (WaitingSetCount.GetValue() == 0)
-	{
-		CanGetEvent->Trigger();
-	}
+	CanGetEvent->Trigger();
 }
 
 void FVoxelData::BeginGet()
@@ -74,7 +63,7 @@ void FVoxelData::EndGet()
 void FVoxelData::Reset()
 {
 	delete MainOctree;
-	MainOctree = new FValueOctree(WorldGenerator, FIntVector::ZeroValue, Depth, FOctree::GetTopIdFromDepth(Depth));
+	MainOctree = new FValueOctree(WorldGenerator, FIntVector::ZeroValue, Depth, FOctree::GetTopIdFromDepth(Depth), bMultiplayer);
 }
 
 void FVoxelData::TestWorldGenerator()
@@ -114,8 +103,8 @@ void FVoxelData::TestWorldGenerator()
 			}
 		}
 	}
-	delete[] CachedValues;
-	delete[] CachedMaterials;
+	delete CachedValues;
+	delete CachedMaterials;
 	EndGet();
 }
 
@@ -272,5 +261,19 @@ void FVoxelData::LoadFromSaveAndGetModifiedPositions(const FVoxelWorldSave& Save
 	auto SaveList = Save.GetChunksList();
 	MainOctree->LoadFromSaveAndGetModifiedPositions(SaveList, OutModifiedPositions);
 	check(SaveList.empty());
+	EndSet();
+}
+
+void FVoxelData::GetDiffLists(std::deque<FVoxelValueDiff>& OutValueDiffList, std::deque<FVoxelMaterialDiff>& OutMaterialDiffList)
+{
+	BeginGet();
+	MainOctree->AddChunksToDiffLists(OutValueDiffList, OutMaterialDiffList);
+	EndGet();
+}
+
+void FVoxelData::LoadFromDiffListsAndGetModifiedPositions(std::deque<FVoxelValueDiff> ValueDiffList, std::deque<FVoxelMaterialDiff> MaterialDiffList, std::deque<FIntVector>& OutModifiedPositions)
+{
+	BeginSet();
+	MainOctree->LoadFromDiffListsAndGetModifiedPositions(ValueDiffList, MaterialDiffList, OutModifiedPositions);
 	EndSet();
 }

@@ -21,11 +21,12 @@ public:
 	 * @param	Depth			Depth of this world; Width = 16 * 2^Depth
 	 * @param	WorldGenerator	Generator for this world
 	 */
-	FVoxelData(int Depth, UVoxelWorldGenerator* WorldGenerator);
+	FVoxelData(int Depth, UVoxelWorldGenerator* WorldGenerator, bool bMultiplayer);
 	~FVoxelData();
 
 	// Depth of the octree
 	const int Depth;
+	const bool bMultiplayer;
 
 	UVoxelWorldGenerator* const WorldGenerator;
 
@@ -49,7 +50,7 @@ public:
 	* @return	Value
 	* @return	Color
 	*/
-	void GetValuesAndMaterials(float Values[], FVoxelMaterial Materials[], const FIntVector& Start, const FIntVector& StartIndex, const int Step, const FIntVector& Size, const FIntVector& ArraySize) const;
+	FORCEINLINE void GetValuesAndMaterials(float Values[], FVoxelMaterial Materials[], const FIntVector& Start, const FIntVector& StartIndex, const int Step, const FIntVector& Size, const FIntVector& ArraySize) const;
 
 	FORCEINLINE float GetValue(int X, int Y, int Z) const;
 	FORCEINLINE FVoxelMaterial GetMaterial(int X, int Y, int Z) const;
@@ -63,7 +64,6 @@ public:
 	 */
 	FORCEINLINE void SetValue(int X, int Y, int Z, float Value);
 	FORCEINLINE void SetValue(int X, int Y, int Z, float Value, FValueOctree*& LastOctree);
-
 	/**
 	 * Set color at position
 	 * @param	Position	Position in voxel space
@@ -97,13 +97,25 @@ public:
 	 */
 	void LoadFromSaveAndGetModifiedPositions(const FVoxelWorldSave& Save, std::deque<FIntVector>& OutModifiedPositions, bool bReset);
 
+	/**
+	 * Get sliced diff arrays to allow network transmission
+	 * @param	OutValueDiffPacketsList		Each packet is sorted by Id
+	 * @param	OutColorDiffPacketsList		Each packet is sorted by Id
+	 */
+	void GetDiffLists(std::deque<FVoxelValueDiff>& OutValueDiffList, std::deque<FVoxelMaterialDiff>& OutMaterialDiffList);
+
+	/**
+	 * Load values and colors from diff arrays, and queue update of chunks that have changed
+	 * @param	ValueDiffArray	First element has lowest Id
+	 * @param	ColorDiffArray	First element has lowest Id
+	 * @param	World			Voxel world
+	 */
+	void LoadFromDiffListsAndGetModifiedPositions(std::deque<FVoxelValueDiff> ValueDiffList, std::deque<FVoxelMaterialDiff> MaterialDiffList, std::deque<FIntVector>& OutModifiedPositions);
+
 private:
 	FValueOctree* MainOctree;
 
 	FThreadSafeCounter GetCount;
 	FEvent* CanGetEvent;
 	FEvent* CanSetEvent;
-
-	FThreadSafeCounter SetCount;
-	FThreadSafeCounter WaitingSetCount;
 };
