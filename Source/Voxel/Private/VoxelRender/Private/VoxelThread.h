@@ -65,5 +65,5 @@ public:
 	~FAsyncPolygonizerTask();
 
 	void DoThreadedWork() override;
-	void Abandon()  override;
+	void Abandon()		  override;
 };

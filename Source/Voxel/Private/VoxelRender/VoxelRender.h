@@ -19,6 +19,7 @@ struct FChunkToDelete
 {
 	UVoxelChunkComponent* Chunk;
 	float TimeLeft;
+	float LodOpacity = 1;
 
 	FChunkToDelete(UVoxelChunkComponent* Chunk, float TimeLeft)
 		: Chunk(Chunk)
@@ -40,7 +41,7 @@ public:
 	FQueuedThreadPool* const MeshThreadPool;
 	FQueuedThreadPool* const FoliageThreadPool;
 	FQueuedThreadPool* const CollisionThreadPool;
-
+	FQueuedThreadPool* const LodSmoothThreadPool;
 
 	FVoxelRender(AVoxelWorld* World, AActor* ChunksParent, FVoxelData* Data, uint32 MeshThreadCount, uint32 FoliageThreadCount);
 	~FVoxelRender();
@@ -84,6 +85,8 @@ public:
 
 	// Needed when ChunksParent != World
 	FVector GetGlobalPosition(const FIntVector& LocalPosition);
+
+	void DeleteChunk(UVoxelChunkComponent* Chunk);
 
 private:
 

@@ -21,6 +21,7 @@ FVoxelRender::FVoxelRender(AVoxelWorld* World, AActor* ChunksParent, FVoxelData*
 	, MeshThreadPool(FQueuedThreadPool::Allocate())
 	, FoliageThreadPool(FQueuedThreadPool::Allocate())
 	, CollisionThreadPool(FQueuedThreadPool::Allocate())
+	, LodSmoothThreadPool(FQueuedThreadPool::Allocate())
 	, TimeSinceFoliageUpdate(0)
 	, TimeSinceLODUpdate(0)
 	, TimeSinceCollisionUpdate(0)
@@ -46,7 +47,7 @@ FVoxelRender::FVoxelRender(AVoxelWorld* World, AActor* ChunksParent, FVoxelData*
 	MeshThreadPool->Create(MeshThreadCount, 1024 * 1024);
 	FoliageThreadPool->Create(FoliageThreadCount, 1024 * 1024);
 	CollisionThreadPool->Create(1, 1024 * 1024);
-
+	LodSmoothThreadPool->Create(MeshThreadCount, 32768, EThreadPriority::TPri_Highest);
 	MainOctree = MakeShareable(new FChunkOctree(this, FIntVector::ZeroValue, Data->Depth, FOctree::GetTopIdFromDepth(Data->Depth)));
 }
 
@@ -143,21 +144,46 @@ void FVoxelRender::Tick(float DeltaTime)
 	}
 
 	// Chunks to delete
+	float LodOpacity = 0;
 	for (auto& ChunkToDelete : ChunksToDelete)
 	{
-		ChunkToDelete.TimeLeft -= DeltaTime;
-		if (ChunkToDelete.TimeLeft < 0)
+		auto Chunk = ChunkToDelete.Chunk;
+		LodOpacity = ChunkToDelete.LodOpacity;
+
+		//TOOD : Improve that algorithm for smooth LodOpacity
+		if (LodOpacity >= 0)
 		{
-			auto Chunk = ChunkToDelete.Chunk;
-			check(!FoliageUpdateNeeded.Contains(Chunk));
-			check(!ChunksToApplyNewMesh.Contains(Chunk));
-			check(!ChunksToApplyNewFoliage.Contains(Chunk));
-			Chunk->Delete();
-			ActiveChunks.Remove(Chunk);
-			InactiveChunks.push_front(Chunk);
+			ChunkToDelete.LodOpacity -= 0.0001;
+			ChunkToDelete.LodOpacity -= 0.01 * (1 - (LodOpacity * LodOpacity * LodOpacity));
+			Chunk->DynamicMaterial->SetScalarParameterValue("LodOpacity", ChunkToDelete.LodOpacity);
+		}
+		else
+		{
+			ChunkToDelete.TimeLeft -= DeltaTime;
+			if (ChunkToDelete.TimeLeft < 0)
+			{
+				check(!FoliageUpdateNeeded.Contains(Chunk));
+				check(!ChunksToApplyNewMesh.Contains(Chunk));
+				check(!ChunksToApplyNewFoliage.Contains(Chunk));
+
+				Chunk->Delete();
+				ActiveChunks.Remove(Chunk);
+				InactiveChunks.push_front(Chunk);
+			}
 		}
 	}
 	ChunksToDelete.erase(std::remove_if(ChunksToDelete.begin(), ChunksToDelete.end(), [](FChunkToDelete ChunkToDelete) { return ChunkToDelete.TimeLeft < 0; }), ChunksToDelete.end());
+}
+
+void FVoxelRender::DeleteChunk(UVoxelChunkComponent* Chunk)
+{
+	//check(!FoliageUpdateNeeded.Contains(Chunk));
+	//check(!ChunksToApplyNewMesh.Contains(Chunk));
+	//check(!ChunksToApplyNewFoliage.Contains(Chunk));
+
+	Chunk->Delete();
+	ActiveChunks.Remove(Chunk);
+	InactiveChunks.push_front(Chunk);
 }
 
 void FVoxelRender::AddInvoker(TWeakObjectPtr<UVoxelInvokerComponent> Invoker)

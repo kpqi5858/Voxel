@@ -6,6 +6,7 @@
 #include "VoxelMaterial.h"
 #include <deque>
 #include "Kismet/KismetArrayLibrary.h"
+#include "VoxelModule.h"
 
 DECLARE_CYCLE_STAT(TEXT("VoxelPolygonizer ~ Cache"), STAT_CACHE, STATGROUP_Voxel);
 DECLARE_CYCLE_STAT(TEXT("VoxelPolygonizer ~ Main Iter"), STAT_MAIN_ITER, STATGROUP_Voxel);

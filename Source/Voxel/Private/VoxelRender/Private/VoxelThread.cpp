@@ -30,7 +30,7 @@ void FAsyncFoliageTask::DoWork()
 	uint32 InstanceTransformsCount = 0;
 
 	const float VoxelTriangleArea = (VoxelSize * VoxelSize) / 2;
-	const float MeanGrassPerTrig = GrassVariety.GrassDensity * VoxelTriangleArea / 100000 /* 10m² in cm² */;
+	const float MeanGrassPerTrig = GrassVariety.GrassDensity * VoxelTriangleArea / 100000 /* 10m?in cm?*/;
 
 	for (int Index = 0; Index < Section.ProcIndexBuffer.Num(); Index += 3)
 	{

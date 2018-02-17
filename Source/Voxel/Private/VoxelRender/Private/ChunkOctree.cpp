@@ -198,11 +198,12 @@ void FChunkOctree::DeleteChilds()
 	check(bHasChilds);
 	check(Childs.Num() == 8);
 
-	for (FChunkOctree* Child : Childs)
+	for (uint8 i = 0; i < 8; ++i)
 	{
-		Child->Delete();
-		delete Child;
+		Childs[i]->Delete();
+		delete Childs[i];
 	}
+
 	Childs.Reset();
 	bHasChilds = false;
 }

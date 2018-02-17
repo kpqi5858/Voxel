@@ -25,6 +25,10 @@ public:
 	UVoxelChunkComponent();
 	~UVoxelChunkComponent();
 
+	UMaterialInstanceDynamic* DynamicMaterial;
+
+	FChunkOctree* CurrentOctree;
+	FVoxelRender* Render;
 	/**
 	* Init this
 	* @param	NewPosition		Position of this (Minimal corner)
@@ -92,10 +96,9 @@ private:
 	FAsyncPolygonizerTask* MeshBuilder;
 	FCriticalSection MeshBuilderLock;
 	TArray<FAsyncTask<FAsyncFoliageTask>*> FoliageTasks;
-
-	FChunkOctree* CurrentOctree;
+	
 	FCriticalSection RenderLock;
-	FVoxelRender* Render;
+	
 
 	// For when CurrentOctree is deleted
 	FIntVector Position;
