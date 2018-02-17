@@ -151,8 +151,7 @@ void FVoxelRender::Tick(float DeltaTime)
 		//TOOD : Improve that algorithm for smooth LodOpacity
 		if (LodOpacity >= 0)
 		{
-			ChunkToDelete.LodOpacity -= 0.0001;
-			ChunkToDelete.LodOpacity -= 0.01 * (1 - (LodOpacity * LodOpacity * LodOpacity));
+			ChunkToDelete.LodOpacity -= 0.0035;
 			Chunk->DynamicMaterial->SetScalarParameterValue("LodOpacity", ChunkToDelete.LodOpacity);
 		}
 		else
@@ -170,7 +169,20 @@ void FVoxelRender::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	for (auto& ChunkToDither : ChunksToDither)
+	{
+		ChunkToDither.TimeLeft -= DeltaTime;
+		UMaterialInstanceDynamic* Mat = ChunkToDither.Chunk->DynamicMaterial;
+
+		if (ChunkToDither.TimeLeft < 0)
+		{
+			Mat->SetScalarParameterValue("LodOpacity", ChunkToDither.Opacity);
+			ChunkToDither.Opacity += 0.03; //TODO : This too
+		}
+	}
 	ChunksToDelete.erase(std::remove_if(ChunksToDelete.begin(), ChunksToDelete.end(), [](FChunkToDelete ChunkToDelete) { return ChunkToDelete.TimeLeft < 0; }), ChunksToDelete.end());
+	ChunksToDither.erase(std::remove_if(ChunksToDither.begin(), ChunksToDither.end(), [](FChunkToDither ChunkToDelete) { return ChunkToDelete.Opacity >= 1; }), ChunksToDither.end());
 }
 
 void FVoxelRender::AddInvoker(TWeakObjectPtr<UVoxelInvokerComponent> Invoker)
@@ -307,6 +319,11 @@ void FVoxelRender::ScheduleDeletion(UVoxelChunkComponent* Chunk)
 
 	// Schedule deletion
 	ChunksToDelete.push_front(FChunkToDelete(Chunk, World->GetDeletionDelay()));
+}
+
+void FVoxelRender::ScheduleDithering(UVoxelChunkComponent* Chunk)
+{
+	ChunksToDither.push_front(FChunkToDither(Chunk, 1));
 }
 
 void FVoxelRender::ChunkHasBeenDestroyed(UVoxelChunkComponent* Chunk)

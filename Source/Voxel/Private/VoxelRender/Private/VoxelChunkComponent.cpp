@@ -77,7 +77,7 @@ void UVoxelChunkComponent::Init(FChunkOctree* NewOctree)
 	ChunkHasHigherRes.SetNumZeroed(6);
 
 	DynamicMaterial = CreateDynamicMaterialInstance(0);
-	DynamicMaterial->SetScalarParameterValue("LodOpacity", 1);
+	DynamicMaterial->SetScalarParameterValue("LodOpacity", 0);
 }
 
 bool UVoxelChunkComponent::Update(bool bAsync)
@@ -174,6 +174,7 @@ void UVoxelChunkComponent::CheckTransitions()
 
 void UVoxelChunkComponent::Unload()
 {
+	Flag = true;
 	check(Render);
 	DeleteTasks();
 
@@ -253,6 +254,12 @@ void UVoxelChunkComponent::ApplyNewMesh()
 	if (CurrentOctree->Depth == 0)
 	{
 		UNavigationSystem::UpdateComponentInNavOctree(*this);
+	}
+
+	if (Flag)
+	{
+		Render->ScheduleDithering(this);
+		Flag = false;
 	}
 }
 

@@ -28,6 +28,19 @@ struct FChunkToDelete
 	};
 };
 
+struct FChunkToDither
+{
+	UVoxelChunkComponent* Chunk;
+	float TimeLeft;
+	float Opacity = 0;
+
+	FChunkToDither(UVoxelChunkComponent* Chunk, float TimeLeft)
+		: Chunk(Chunk)
+		, TimeLeft(TimeLeft)
+	{
+	};
+};
+
 /**
  *
  */
@@ -73,6 +86,8 @@ public:
 	void ScheduleDeletion(UVoxelChunkComponent* Chunk);
 	void ChunkHasBeenDestroyed(UVoxelChunkComponent* Chunk);
 
+	void ScheduleDithering(UVoxelChunkComponent* Chunk);
+
 	FChunkOctree* GetChunkOctreeAt(const FIntVector& Position) const;
 
 	FChunkOctree* GetAdjacentChunk(TransitionDirection Direction, const FIntVector& Position, int Size) const;
@@ -109,7 +124,7 @@ private:
 	FCriticalSection ChunksToApplyNewFoliageLock;
 
 	std::deque<FChunkToDelete> ChunksToDelete;
-
+	std::deque<FChunkToDither> ChunksToDither;
 	// Invokers
 	std::deque<TWeakObjectPtr<UVoxelInvokerComponent>> VoxelInvokerComponents;
 

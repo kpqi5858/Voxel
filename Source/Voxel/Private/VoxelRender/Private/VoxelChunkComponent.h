@@ -104,6 +104,8 @@ private:
 	FIntVector Position;
 	int Size;
 
+	bool Flag = true;
+
 	FThreadSafeCounter CompletedFoliageTaskCount;
 
 	void OnAllFoliageComplete();
