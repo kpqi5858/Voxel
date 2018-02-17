@@ -27,8 +27,6 @@ public:
 
 	UMaterialInstanceDynamic* DynamicMaterial;
 
-	FChunkOctree* CurrentOctree;
-	FVoxelRender* Render;
 	/**
 	* Init this
 	* @param	NewPosition		Position of this (Minimal corner)
@@ -99,6 +97,8 @@ private:
 	
 	FCriticalSection RenderLock;
 	
+	FChunkOctree* CurrentOctree;
+	FVoxelRender* Render;
 
 	// For when CurrentOctree is deleted
 	FIntVector Position;

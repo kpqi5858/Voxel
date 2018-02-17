@@ -21,7 +21,6 @@ FVoxelRender::FVoxelRender(AVoxelWorld* World, AActor* ChunksParent, FVoxelData*
 	, MeshThreadPool(FQueuedThreadPool::Allocate())
 	, FoliageThreadPool(FQueuedThreadPool::Allocate())
 	, CollisionThreadPool(FQueuedThreadPool::Allocate())
-	, LodSmoothThreadPool(FQueuedThreadPool::Allocate())
 	, TimeSinceFoliageUpdate(0)
 	, TimeSinceLODUpdate(0)
 	, TimeSinceCollisionUpdate(0)
@@ -47,7 +46,6 @@ FVoxelRender::FVoxelRender(AVoxelWorld* World, AActor* ChunksParent, FVoxelData*
 	MeshThreadPool->Create(MeshThreadCount, 1024 * 1024);
 	FoliageThreadPool->Create(FoliageThreadCount, 1024 * 1024);
 	CollisionThreadPool->Create(1, 1024 * 1024);
-	LodSmoothThreadPool->Create(MeshThreadCount, 32768, EThreadPriority::TPri_Highest);
 	MainOctree = MakeShareable(new FChunkOctree(this, FIntVector::ZeroValue, Data->Depth, FOctree::GetTopIdFromDepth(Data->Depth)));
 }
 
@@ -173,17 +171,6 @@ void FVoxelRender::Tick(float DeltaTime)
 		}
 	}
 	ChunksToDelete.erase(std::remove_if(ChunksToDelete.begin(), ChunksToDelete.end(), [](FChunkToDelete ChunkToDelete) { return ChunkToDelete.TimeLeft < 0; }), ChunksToDelete.end());
-}
-
-void FVoxelRender::DeleteChunk(UVoxelChunkComponent* Chunk)
-{
-	//check(!FoliageUpdateNeeded.Contains(Chunk));
-	//check(!ChunksToApplyNewMesh.Contains(Chunk));
-	//check(!ChunksToApplyNewFoliage.Contains(Chunk));
-
-	Chunk->Delete();
-	ActiveChunks.Remove(Chunk);
-	InactiveChunks.push_front(Chunk);
 }
 
 void FVoxelRender::AddInvoker(TWeakObjectPtr<UVoxelInvokerComponent> Invoker)
