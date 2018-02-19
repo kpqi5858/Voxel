@@ -211,7 +211,7 @@ void FChunkOctree::DeleteChilds()
 void FChunkOctree::GetLeafsOverlappingBox(const FVoxelBox& Box, std::deque<FChunkOctree*>& Octrees)
 {
 	FVoxelBox OctreeBox(GetMinimalCornerPosition(), GetMaximalCornerPosition());
-
+	
 	if (OctreeBox.Intersect(Box))
 	{
 		if (IsLeaf())

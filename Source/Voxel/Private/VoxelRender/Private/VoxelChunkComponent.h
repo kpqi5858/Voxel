@@ -27,6 +27,7 @@ public:
 
 	UMaterialInstanceDynamic* DynamicMaterial;
 
+	bool WillDestroyed = false;
 	/**
 	* Init this
 	* @param	NewPosition		Position of this (Minimal corner)

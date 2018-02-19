@@ -40,6 +40,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Voxel", meta = (AdvancedDisplay = "4"))
 		static void SetValueSphere(AVoxelWorld* World, const FVector Position, const float Radius, const bool bAdd, const bool bAsync = false, const float HardnessMultiplier = 1);
+	
+	UFUNCTION(BlueprintCallable, Category = "Voxel")
+		static void SetValueBox(AVoxelWorld * const World, const FVector Position, const float ExtentXInVoxel, const float ExtentYInVoxel, const float ExtentZInVoxel, const bool bAdd, const bool bAsync, const float HardnessMultiplier);
 
 	/**
 	* Set value to positive or negative in a specified box. Box is placed on its bottom side, relative to the supplied world space position.

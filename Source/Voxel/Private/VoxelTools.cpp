@@ -160,39 +160,57 @@ void UVoxelTools::SetValueSphere(AVoxelWorld* World, const FVector Position, con
 	World->UpdateChunksOverlappingBox(FVoxelBox(LocalPosition + FIntVector(1, 1, 1) * -(IntRadius + 1), LocalPosition + FIntVector(1, 1, 1) * (IntRadius + 1)), bAsync);
 }
 
-//void UVoxelTools::SetValueBox(AVoxelWorld* const World, const FVector Position, const float ExtentXInVoxel, const float ExtentYInVoxel, const float ExtentZInVoxel, const bool bAdd, const bool bAsync, const float HardnessMultiplier)
-//{
-//	if (World == nullptr)
-//	{
-//		UE_LOG(LogVoxel, Error, TEXT("World is NULL"));
-//		return;
-//	}
-//	check(World);
-//
-//	FIntVector LocalPosition = World->GlobalToLocal(Position);
-//	int IntExtentX = FMath::CeilToInt(ExtentXInVoxel);
-//	int IntExtentY = FMath::CeilToInt(ExtentYInVoxel);
-//	int IntHeight = FMath::CeilToInt(ExtentZInVoxel * 2);
-//
-//	float Value = HardnessMultiplier * (bAdd ? -1 : 1);
-//
-//	for (int X = -IntExtentX; X <= IntExtentX; X++)
-//	{
-//		for (int Y = -IntExtentY; Y <= IntExtentY; Y++)
-//		{
-//			for (int Z = 0; Z <= IntHeight; Z++)
-//			{
-//				FIntVector CurrentPosition = LocalPosition + FIntVector(X, Y, Z);
-//
-//				if ((Value < 0 && bAdd) || (Value >= 0 && !bAdd) || (World->GetValue(CurrentPosition) * Value > 0))
-//				{
-//					World->SetValue(CurrentPosition, Value);
-//					World->UpdateChunksAtPosition(CurrentPosition, bAsync);
-//				}
-//			}
-//		}
-//	}
-//}
+void UVoxelTools::SetValueBox(AVoxelWorld* const World, const FVector Position, const float ExtentXInVoxel, const float ExtentYInVoxel, const float ExtentZInVoxel, const bool bAdd, const bool bAsync, const float HardnessMultiplier)
+{
+	if (World == nullptr)
+	{
+		UE_LOG(LogVoxel, Error, TEXT("World is NULL"));
+		return;
+	}
+	check(World);
+
+	FIntVector LocalPosition = World->GlobalToLocal(Position);
+	int IntExtentX = FMath::CeilToInt(ExtentXInVoxel / World->GetVoxelSize());
+	int IntExtentY = FMath::CeilToInt(ExtentYInVoxel / World->GetVoxelSize());
+	int IntHeight = FMath::CeilToInt(ExtentZInVoxel / World->GetVoxelSize());
+
+	FValueOctree* LastOctree = nullptr;
+	FVoxelData* Data = World->GetData();
+
+	float Value = HardnessMultiplier * (bAdd ? -1 : 1);
+
+	Data->BeginSet();
+	for (int X = -IntExtentX; X <= IntExtentX; X++)
+	{
+		for (int Y = -IntExtentY; Y <= IntExtentY; Y++)
+		{
+			for (int Z = -IntHeight; Z <= IntHeight; Z++)
+			{
+				const FIntVector CurrentPosition = LocalPosition + FIntVector(X, Y, Z);
+				float OldValue = Data->GetValue(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Z);
+
+				bool bValid;
+				if ((Value <= 0 && bAdd) || (Value > 0 && !bAdd))
+				{
+					bValid = true;
+				}
+				else
+				{
+					bValid = FVoxelType::HaveSameSign(OldValue, Value);
+				}
+				if (bValid)
+				{
+					if (LIKELY(Data->IsInWorld(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Z)))
+					{
+						Data->SetValue(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Z, Value, LastOctree);
+					}
+				}
+			}
+		}
+	}
+	Data->EndSet();
+	World->UpdateChunksOverlappingBox(FVoxelBox(LocalPosition - FIntVector(IntExtentX + 1, IntExtentY + 1, IntHeight + 1), LocalPosition + FIntVector(IntExtentX + 1, IntExtentY + 1, IntHeight + 1)), bAsync);
+}
 
 void UVoxelTools::SetMaterialSphere(AVoxelWorld* World, const FVector Position, const float WorldRadius, const uint8 MaterialIndex, const bool bUseLayer1, const float FadeDistance, const bool bAsync)
 {

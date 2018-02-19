@@ -78,6 +78,7 @@ void UVoxelChunkComponent::Init(FChunkOctree* NewOctree)
 
 	DynamicMaterial = CreateDynamicMaterialInstance(0);
 	DynamicMaterial->SetScalarParameterValue("LodOpacity", 0);
+
 }
 
 bool UVoxelChunkComponent::Update(bool bAsync)
@@ -180,6 +181,7 @@ void UVoxelChunkComponent::Unload()
 
 	Render->AddTransitionCheck(this); // Needed because octree is only partially updated when Unload is called
 	Render->ScheduleDeletion(this);
+	WillDestroyed = true;
 	CurrentOctree = nullptr;
 }
 

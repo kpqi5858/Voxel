@@ -151,7 +151,7 @@ void FVoxelRender::Tick(float DeltaTime)
 		//TOOD : Improve that algorithm for smooth LodOpacity
 		if (LodOpacity >= 0)
 		{
-			ChunkToDelete.LodOpacity -= 0.0035;
+			ChunkToDelete.LodOpacity -= 0.004;
 			Chunk->DynamicMaterial->SetScalarParameterValue("LodOpacity", ChunkToDelete.LodOpacity);
 		}
 		else
@@ -243,6 +243,7 @@ void FVoxelRender::UpdateChunksOverlappingBox(const FVoxelBox& Box, bool bAsync)
 
 	for (auto Chunk : OverlappingLeafs)
 	{
+		//if (Chunk->GetVoxelChunk()->WillDestroyed) continue; //Idk what is causing the crash
 		UpdateChunk(Chunk, bAsync);
 	}
 
